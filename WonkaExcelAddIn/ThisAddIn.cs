@@ -5,20 +5,13 @@ using System.Text;
 using System.Xml.Linq;
 using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
+using System.Windows.Forms;
 using Microsoft.Office.Tools.Excel;
 
 namespace WonkaExcelAddIn
 {
     public partial class ThisAddIn
     {
-        private void ThisAddIn_Startup(object sender, System.EventArgs e)
-        {
-            this.Application.WorkbookBeforeSave += new Microsoft.Office.Interop.Excel.AppEvents_WorkbookBeforeSaveEventHandler(Application_WorkbookBeforeSave);
-        }
-
-        private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
-        {
-        }
 
         public Excel.Range GetActiveCell()
         {
@@ -29,38 +22,84 @@ namespace WonkaExcelAddIn
         {
             var currData = new Dictionary<string, string>();
 
-            var sheets = Application.ThisWorkbook.Worksheets;
-
-            var worksheet = sheets.get_Item(1);
-
-            /*
-            for (int i = 1; i <= worksheet.Columns.Count; i++)
+            try
             {
-                Excel.Range range = worksheet.get_Range("A" + i.ToString(), "J" + i.ToString());
+                Excel.Worksheet activeWorksheet = ((Excel.Worksheet)Application.ActiveSheet);
 
-                string value = range.Cells.Value2.ToString();
+                for (int i = 1; i <= activeWorksheet.Rows.Count; i++)
+                {
+                    // Excel.Range currRow = activeWorksheet.get_Range("A" + i.ToString(), "B" + i.ToString());
+                   
+                    string sAttrName  = (string)(activeWorksheet.Cells[i, 1] as Excel.Range).Value;
+                    string sAttrValue = "";
 
-                if (value.Contains("orderID"){
-                    //This column is for orders, I need to stop here and get all cell values under this column. 
-                    break;
+                    var attrVal = (activeWorksheet.Cells[i, 2] as Excel.Range).Value;
+                    if (attrVal is String)
+                        sAttrValue = (string) attrVal;
+                    else if (attrVal is DateTime)
+                    {
+                        sAttrValue = Convert.ToString(attrVal);
+                        if (sAttrValue.Contains(" "))
+                        {
+                            string[] DateParts = sAttrValue.Split(' ');
+                            if (DateParts.Length > 0)
+                                sAttrValue = DateParts[0];
+                        }
+                    }
+                    else
+                        sAttrValue = Convert.ToString(attrVal);
+
+                    if (sAttrName == null)
+                        break;
+
+                    if (!String.IsNullOrEmpty(sAttrName) && !String.IsNullOrEmpty(sAttrValue))
+                    {
+                        currData[sAttrName] = sAttrValue;
+                    }
                 }
             }
-            */
-
-            for (int i = 1; i <= worksheet.Rows.Count; i++)
+            catch (Exception ex)
             {
-                Excel.Range range = worksheet.get_Range("A" + i.ToString(), "B" + i.ToString());
-
-                string sAttrName  = range.Cells.Value.ToString();
-                string sAttrValue = range.Cells.Value2.ToString();
-
-                if (!String.IsNullOrEmpty(sAttrName) && !String.IsNullOrEmpty(sAttrValue))
-                {
-                    currData[sAttrName] = sAttrValue;
-                }
+                // 0x800A03EC?
+                MessageBox.Show("ERROR!  Exception throw: (" + ex.Message + ")");
             }
 
             return currData;
+        }
+
+        public void SetCurrentAttributeData(Dictionary<string, string> poCurrData)
+        {
+            try
+            {
+                Excel.Worksheet activeWorksheet = ((Excel.Worksheet)Application.ActiveSheet);
+
+                List<string> keyList = poCurrData.Keys.ToList();
+
+                for (int i = 1; i <= keyList.Count; i++)
+                {
+                    string sAttrName  = keyList[i-1];
+                    string sAttrValue = poCurrData[sAttrName];
+
+                    (activeWorksheet.Cells[i, 1] as Excel.Range).Value = sAttrName;
+                    (activeWorksheet.Cells[i, 2] as Excel.Range).Value = sAttrValue;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 0x800A03EC
+                MessageBox.Show("ERROR!  Exception throw: (" + ex.Message + ")");
+            }
+        }
+
+        #region Handlers 
+
+        private void ThisAddIn_Startup(object sender, System.EventArgs e)
+        {
+            this.Application.WorkbookBeforeSave += new Microsoft.Office.Interop.Excel.AppEvents_WorkbookBeforeSaveEventHandler(Application_WorkbookBeforeSave);
+        }
+
+        private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
+        {
         }
 
         void Application_WorkbookBeforeSave(Microsoft.Office.Interop.Excel.Workbook Wb, bool SaveAsUI, ref bool Cancel)
@@ -79,6 +118,8 @@ namespace WonkaExcelAddIn
             newFirstRow.Value2 = "This text was added by using code";
              **/
         }
+
+        #endregion
 
         #region VSTO generated code
 

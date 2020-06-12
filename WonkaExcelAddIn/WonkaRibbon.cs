@@ -8,6 +8,7 @@ using Microsoft.Office.Tools.Ribbon;
 
 using Wonka.BizRulesEngine;
 using Wonka.MetaData;
+using Wonka.Product;
 
 namespace WonkaExcelAddIn
 {
@@ -32,19 +33,21 @@ namespace WonkaExcelAddIn
 		private string              currRulesUrl = String.Format("{0}/{1}", CONST_INFURA_IPFS_GATEWAY_URL, CONST_RULES_FILE_IPFS_KEY);
 		private WonkaBizRulesEngine rulesEngine  = null;
 
+		private WonkaRefEnvironment refEnvHandle = null;
+
 		private void WonkaRibbon_Load(object sender, RibbonUIEventArgs e)
         {
-			WonkaRefEnvironment WonkaRefEnv =
+			refEnvHandle =
 				WonkaRefEnvironment.CreateInstance(false, new Wonka.BizRulesEngine.Samples.WonkaBreMetadataTestSource());
 
-			WonkaRefAttr AccountIDAttr       = WonkaRefEnv.GetAttributeByAttrName("BankAccountID");
-			WonkaRefAttr AccountNameAttr     = WonkaRefEnv.GetAttributeByAttrName("BankAccountName");
-			WonkaRefAttr AccountStsAttr      = WonkaRefEnv.GetAttributeByAttrName("AccountStatus");
-			WonkaRefAttr AccountCurrValAttr  = WonkaRefEnv.GetAttributeByAttrName("AccountCurrValue");
-			WonkaRefAttr AccountTypeAttr     = WonkaRefEnv.GetAttributeByAttrName("AccountType");
-			WonkaRefAttr AccountCurrencyAttr = WonkaRefEnv.GetAttributeByAttrName("AccountCurrency");
-			WonkaRefAttr RvwFlagAttr         = WonkaRefEnv.GetAttributeByAttrName("AuditReviewFlag");
-			WonkaRefAttr CreationDtAttr      = WonkaRefEnv.GetAttributeByAttrName("CreationDt");
+			WonkaRefAttr AccountIDAttr       = refEnvHandle.GetAttributeByAttrName("BankAccountID");
+			WonkaRefAttr AccountNameAttr     = refEnvHandle.GetAttributeByAttrName("BankAccountName");
+			WonkaRefAttr AccountStsAttr      = refEnvHandle.GetAttributeByAttrName("AccountStatus");
+			WonkaRefAttr AccountCurrValAttr  = refEnvHandle.GetAttributeByAttrName("AccountCurrValue");
+			WonkaRefAttr AccountTypeAttr     = refEnvHandle.GetAttributeByAttrName("AccountType");
+			WonkaRefAttr AccountCurrencyAttr = refEnvHandle.GetAttributeByAttrName("AccountCurrency");
+			WonkaRefAttr RvwFlagAttr         = refEnvHandle.GetAttributeByAttrName("AuditReviewFlag");
+			WonkaRefAttr CreationDtAttr      = refEnvHandle.GetAttributeByAttrName("CreationDt");
 
 			string sWonkaRules = "";
 
@@ -54,15 +57,58 @@ namespace WonkaExcelAddIn
 			}
 
 			rulesEngine = new WonkaBizRulesEngine(new StringBuilder(sWonkaRules));
-        }
 
-        private void Validate_Click(object sender, RibbonControlEventArgs e)
-        {
-            var thisCell = Globals.ThisAddIn.GetActiveCell();
-
-			var CurrAttrData = Globals.ThisAddIn.GetCurrentAttributeData();
-
-			// MessageBox.Show("This cell’s address is: " + thisCell.Address + " — And it’s value is: " + thisCell.Value);
+			/**
+			 ** NOTE: Now set the data on the worksheet
+			 **
+			var sampleData = new Dictionary<string, string>();
+			sampleData[AccountIDAttr.AttrName]   = "123456789";
+			sampleData[AccountNameAttr.AttrName] = "JohnSmithFirstCheckingAccount";
+			Globals.ThisAddIn.SetCurrentAttributeData(sampleData);
+	         **/
 		}
-    }
+
+		private WonkaProduct AssembleProduct(Dictionary<string, string> poAttrData)
+		{
+			var NewProduct = new Wonka.Product.WonkaProduct();
+
+			foreach (string sTmpAttrName in poAttrData.Keys)
+			{
+				WonkaRefAttr TargetAttr = refEnvHandle.GetAttributeByAttrName(sTmpAttrName);
+
+				NewProduct.SetAttribute(TargetAttr, sTmpAttrName);
+			}
+
+			return NewProduct;
+		}
+
+		private void Validate_Click(object sender, RibbonControlEventArgs e)
+        {
+			try
+			{
+				var thisCell = Globals.ThisAddIn.GetActiveCell();
+
+				var currAttrData = Globals.ThisAddIn.GetCurrentAttributeData();
+
+				WonkaProduct currProduct = AssembleProduct(currAttrData);
+
+				var report = rulesEngine.Validate(currProduct);
+
+				if (report.GetRuleSetSevereFailureCount() == 0)
+					MessageBox.Show("SUCCESS!");
+				else
+				{
+					MessageBox.Show("ERROR!  [" + report.GetRuleSetSevereFailureCount() + "] severe rulesets failed.");
+				}
+			}
+			catch (WonkaBizRuleException bizEx)
+			{
+				MessageBox.Show("ERROR!  Wonka Exception: " + bizEx);
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show("ERROR!  Exception: " + ex);
+			}
+		}
+	}
 }
