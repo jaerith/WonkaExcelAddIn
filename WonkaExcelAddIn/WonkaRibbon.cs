@@ -76,7 +76,7 @@ namespace WonkaExcelAddIn
 			{
 				WonkaRefAttr TargetAttr = refEnvHandle.GetAttributeByAttrName(sTmpAttrName);
 
-				NewProduct.SetAttribute(TargetAttr, sTmpAttrName);
+				NewProduct.SetAttribute(TargetAttr, poAttrData[sTmpAttrName]);
 			}
 
 			return NewProduct;
