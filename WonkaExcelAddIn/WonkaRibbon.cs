@@ -82,6 +82,29 @@ namespace WonkaExcelAddIn
 			return NewProduct;
 		}
 
+		public string GetErrors(Wonka.BizRulesEngine.Reporting.WonkaBizRuleTreeReport report)
+		{
+			var ErrorReport = new StringBuilder();
+
+			foreach (var ReportNode in report.GetRuleSetSevereFailures())
+			{
+				if (ReportNode.RuleResults.Count > 0)
+				{
+					foreach (var RuleReportNode in ReportNode.RuleResults)
+					{
+						if (ErrorReport.Length > 0)
+							ErrorReport.Append("\n");
+
+						ErrorReport.Append(RuleReportNode.VerboseError.Replace("/", ""));
+					}
+				}
+				else
+					ErrorReport.Append(ReportNode.ErrorDescription);
+			}
+
+			return ErrorReport.ToString();
+		}
+
 		private void Validate_Click(object sender, RibbonControlEventArgs e)
         {
 			try
@@ -98,7 +121,8 @@ namespace WonkaExcelAddIn
 					MessageBox.Show("SUCCESS!");
 				else
 				{
-					MessageBox.Show("ERROR!  [" + report.GetRuleSetSevereFailureCount() + "] severe rulesets failed.");
+					string sErrors = GetErrors(report);
+					MessageBox.Show("ERROR!  " + sErrors);
 				}
 			}
 			catch (WonkaBizRuleException bizEx)
