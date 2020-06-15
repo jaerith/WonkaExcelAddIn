@@ -73,20 +73,21 @@ namespace WonkaExcelAddIn
             {
                 Excel.Worksheet activeWorksheet = ((Excel.Worksheet)Application.ActiveSheet);
 
-                List<string> keyList = poCurrData.Keys.ToList();
-
-                for (int i = 1; i <= keyList.Count; i++)
+                for (int i = 1; i <= activeWorksheet.Rows.Count; i++)
                 {
-                    string sAttrName  = keyList[i-1];
-                    string sAttrValue = poCurrData[sAttrName];
+                    string sAttrName  = (string)(activeWorksheet.Cells[i, 1] as Excel.Range).Value;
+                    string sAttrValue = "";
+
+                    if (sAttrName == null)
+                        break;
 
                     (activeWorksheet.Cells[i, 1] as Excel.Range).Value = sAttrName;
-                    (activeWorksheet.Cells[i, 2] as Excel.Range).Value = sAttrValue;
+                    (activeWorksheet.Cells[i, 2] as Excel.Range).Value = poCurrData[sAttrName];
                 }
             }
             catch (Exception ex)
             {
-                // 0x800A03EC
+                // 0x800A03EC?
                 MessageBox.Show("ERROR!  Exception throw: (" + ex.Message + ")");
             }
         }

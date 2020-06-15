@@ -110,25 +110,32 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Wonka.BizRulesEngine">
+    <Reference Include="Wonka.BizRulesEngine, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\wonka\Wonka.BizRulesEngine.dll</HintPath>
     </Reference>
-    <Reference Include="Wonka.Eth">
+    <Reference Include="Wonka.Eth, Version=1.0.7437.38039, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\wonka\Wonka.Eth.dll</HintPath>
     </Reference>
-    <Reference Include="Wonka.IpfsW">
+    <Reference Include="Wonka.IpfsW, Version=1.0.7437.38035, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\wonka\Wonka.IpfsW.dll</HintPath>
     </Reference>
-    <Reference Include="Wonka.MetaData">
+    <Reference Include="Wonka.MetaData, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\wonka\Wonka.MetaData.dll</HintPath>
     </Reference>
-    <Reference Include="Wonka.Product">
+    <Reference Include="Wonka.Product, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\wonka\Wonka.Product.dll</HintPath>
     </Reference>
-    <Reference Include="Wonka.Storage">
+    <Reference Include="Wonka.Storage, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\wonka\Wonka.Storage.dll</HintPath>
     </Reference>
-    <Reference Include="WonkaSystem">
+    <Reference Include="WonkaSystem, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\wonka\WonkaSystem.dll</HintPath>
     </Reference>
   </ItemGroup>

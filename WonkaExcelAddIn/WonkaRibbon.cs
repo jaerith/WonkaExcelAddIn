@@ -82,6 +82,15 @@ namespace WonkaExcelAddIn
 			return NewProduct;
 		}
 
+		private Dictionary<string,string> DisassembleProduct(Wonka.Product.WonkaProduct poProduct)
+		{
+			var DataSnapshot = new Dictionary<string, string>();
+
+			refEnvHandle.AttrCache.ForEach(x => DataSnapshot[x.AttrName] = poProduct.GetAttributeValue(x));
+
+			return DataSnapshot;
+		}
+
 		public string GetErrors(Wonka.BizRulesEngine.Reporting.WonkaBizRuleTreeReport report)
 		{
 			var ErrorReport = new StringBuilder();
@@ -118,7 +127,13 @@ namespace WonkaExcelAddIn
 				var report = rulesEngine.Validate(currProduct);
 
 				if (report.GetRuleSetSevereFailureCount() == 0)
+				{
+					var postAttrData = DisassembleProduct(currProduct);
+
+					Globals.ThisAddIn.SetCurrentAttributeData(postAttrData);
+
 					MessageBox.Show("SUCCESS!");
+				}
 				else
 				{
 					string sErrors = GetErrors(report);
