@@ -7,6 +7,8 @@ using System.Windows.Forms;
 using Microsoft.Office.Tools.Ribbon;
 
 using Wonka.BizRulesEngine;
+using Wonka.BizRulesEngine.RuleTree;
+using Wonka.Eth.Init;
 using Wonka.MetaData;
 using Wonka.Product;
 
@@ -15,6 +17,9 @@ namespace WonkaExcelAddIn
     public partial class WonkaRibbon
     {
 		#region CONSTANTS
+
+		public const string CONST_ACCT_PUBLIC_KEY   = "0x12890D2cce102216644c59daE5baed380d84830c";
+		public const string CONST_ACCT_PASSWORD     = "0xb5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7";
 
 		public const string CONST_INFURA_IPFS_GATEWAY_URL     = "https://ipfs.infura.io/ipfs/";
 		public const string CONST_INFURA_IPFS_API_GATEWAY_URL = "https://ipfs.infura.io:5001/7238211010344719ad14a89db874158c/api/";
@@ -30,15 +35,17 @@ namespace WonkaExcelAddIn
 
 		#endregion
 
-		private string              currRulesUrl = String.Format("{0}/{1}", CONST_INFURA_IPFS_GATEWAY_URL, CONST_RULES_FILE_IPFS_KEY);
-		private WonkaBizRulesEngine rulesEngine  = null;
+		private string               currRulesUrl   = String.Format("{0}/{1}", CONST_INFURA_IPFS_GATEWAY_URL, CONST_RULES_FILE_IPFS_KEY);
+		private string               wonkaRules     = "";
+		private IMetadataRetrievable metadataSource = new Wonka.BizRulesEngine.Samples.WonkaBreMetadataTestSource();
+		private WonkaBizRulesEngine  rulesEngine    = null;
 
 		private WonkaRefEnvironment refEnvHandle = null;
 
 		private void WonkaRibbon_Load(object sender, RibbonUIEventArgs e)
         {
 			refEnvHandle =
-				WonkaRefEnvironment.CreateInstance(false, new Wonka.BizRulesEngine.Samples.WonkaBreMetadataTestSource());
+				WonkaRefEnvironment.CreateInstance(false, metadataSource);
 
 			WonkaRefAttr AccountIDAttr       = refEnvHandle.GetAttributeByAttrName("BankAccountID");
 			WonkaRefAttr AccountNameAttr     = refEnvHandle.GetAttributeByAttrName("BankAccountName");
@@ -49,23 +56,13 @@ namespace WonkaExcelAddIn
 			WonkaRefAttr RvwFlagAttr         = refEnvHandle.GetAttributeByAttrName("AuditReviewFlag");
 			WonkaRefAttr CreationDtAttr      = refEnvHandle.GetAttributeByAttrName("CreationDt");
 
-			string sWonkaRules = "";
-
 			using (var client = new System.Net.Http.HttpClient())
 			{
-				sWonkaRules = client.GetStringAsync(currRulesUrl).Result;
+				wonkaRules = client.GetStringAsync(currRulesUrl).Result;
 			}
 
-			rulesEngine = new WonkaBizRulesEngine(new StringBuilder(sWonkaRules));
-
-			/**
-			 ** NOTE: Now set the data on the worksheet
-			 **
-			var sampleData = new Dictionary<string, string>();
-			sampleData[AccountIDAttr.AttrName]   = "123456789";
-			sampleData[AccountNameAttr.AttrName] = "JohnSmithFirstCheckingAccount";
-			Globals.ThisAddIn.SetCurrentAttributeData(sampleData);
-	         **/
+			rulesEngine = 
+				new WonkaBizRulesEngine(new StringBuilder(wonkaRules));
 		}
 
 		private WonkaProduct AssembleProduct(Dictionary<string, string> poAttrData)
@@ -80,6 +77,42 @@ namespace WonkaExcelAddIn
 			}
 
 			return NewProduct;
+		}
+
+		private WonkaEthRulesEngine AssembleWonkaEthEngine(string psWonkaRules)
+		{
+			refEnvHandle =
+				WonkaRefEnvironment.CreateInstance(false, metadataSource);
+
+			string sContractAddr  = "";
+			string sContractABI   = "";
+			string sGetMethodName = "";
+			string sSetMethodName = "";
+
+			WonkaBizSource.RetrieveDataMethod retrieveMethod = null;
+
+			var SourceMap = new Dictionary<string, WonkaBizSource>();
+			foreach (var TmpAttr in refEnvHandle.AttrCache)
+			{
+				var TmpSource =
+					new WonkaBizSource(TmpAttr.AttrName,
+									   CONST_ACCT_PUBLIC_KEY,
+									   CONST_ACCT_PASSWORD,
+									   sContractAddr,
+									   sContractABI,
+									   sGetMethodName,
+									   sSetMethodName,
+									   retrieveMethod);
+
+				SourceMap[TmpAttr.AttrName] = TmpSource;
+			}
+
+			WonkaEthEngineInitialization EngineInit =
+				new WonkaEthEngineInitialization() { EthSenderAddress = CONST_ACCT_PUBLIC_KEY, 
+					                                 EthPassword = CONST_ACCT_PASSWORD, 
+					                                 Web3HttpUrl = CONST_TEST_INFURA_URL };
+
+			return new WonkaEthRulesEngine(new StringBuilder(psWonkaRules), SourceMap, EngineInit, metadataSource, false);
 		}
 
 		private Dictionary<string,string> DisassembleProduct(Wonka.Product.WonkaProduct poProduct)
@@ -118,8 +151,7 @@ namespace WonkaExcelAddIn
         {
 			try
 			{
-				var thisCell = Globals.ThisAddIn.GetActiveCell();
-
+				var thisCell     = Globals.ThisAddIn.GetActiveCell();
 				var currAttrData = Globals.ThisAddIn.GetCurrentAttributeData();
 
 				WonkaProduct currProduct = AssembleProduct(currAttrData);

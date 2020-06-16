@@ -76,7 +76,6 @@ namespace WonkaExcelAddIn
                 for (int i = 1; i <= activeWorksheet.Rows.Count; i++)
                 {
                     string sAttrName  = (string)(activeWorksheet.Cells[i, 1] as Excel.Range).Value;
-                    string sAttrValue = "";
 
                     if (sAttrName == null)
                         break;
@@ -96,6 +95,8 @@ namespace WonkaExcelAddIn
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
+            // Application.InputBox("Prompt", "Title", Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, 8);
+
             this.Application.WorkbookBeforeSave += new Microsoft.Office.Interop.Excel.AppEvents_WorkbookBeforeSaveEventHandler(Application_WorkbookBeforeSave);
         }
 
